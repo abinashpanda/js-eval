@@ -9,11 +9,11 @@ export type Identifier = BaseExpression & {
   expressionType: 'identifier'
   value: string
 }
-export type Number = BaseExpression & {
+export type NumberExpression = BaseExpression & {
   expressionType: 'number'
   value: number
 }
-export type String = BaseExpression & {
+export type StringExpression = BaseExpression & {
   expressionType: 'string'
   value: string
 }
@@ -34,7 +34,12 @@ export type FunctionExpression = BaseExpression & {
   parameters: Identifier[]
   body: BlockStatement
 }
-export type Expression = Identifier | Number | String | PrefixExpression | InfixExpression
+export type Expression =
+  | Identifier
+  | NumberExpression
+  | StringExpression
+  | PrefixExpression
+  | InfixExpression
 
 type BaseStatement = {
   type: 'statement'
@@ -96,7 +101,9 @@ export function print(node: Node): string {
 function printStatement(statment: Statement): string {
   return match(statment)
     .returnType<string>()
-    .with({ statementType: 'expression' }, ({ expression }) => printExpression(expression))
+    .with({ statementType: 'expression' }, ({ expression }) =>
+      printExpression(expression),
+    )
     .otherwise(() => '')
 }
 
@@ -106,10 +113,14 @@ function printExpression(expression: Expression): string {
     .with({ expressionType: 'number' }, ({ value }) => `${value}`)
     .with({ expressionType: 'string' }, ({ value }) => value)
     .with({ expressionType: 'identifier' }, ({ value }) => value)
-    .with({ expressionType: 'prefix' }, ({ operator, right }) => `(${operator}${printExpression(right)})`)
+    .with(
+      { expressionType: 'prefix' },
+      ({ operator, right }) => `(${operator}${printExpression(right)})`,
+    )
     .with(
       { expressionType: 'infix' },
-      ({ operator, right, left }) => `(${printExpression(left)} ${operator} ${printExpression(right)})`,
+      ({ operator, right, left }) =>
+        `(${printExpression(left)} ${operator} ${printExpression(right)})`,
     )
     .otherwise(() => '')
 }

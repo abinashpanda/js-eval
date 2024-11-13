@@ -166,11 +166,13 @@ export class Lexer {
         const ch = this.src[0]
         if (this.isDigit(ch)) {
           return this.number()
-        } else if (ch === '"' || ch === "'") {
+        }
+        if (ch === '"' || ch === "'") {
           // consume the first token
           this.slice(1)
           return this.string(ch)
-        } else if (this.isValidIdentifier(ch)) {
+        }
+        if (this.isValidIdentifier(ch)) {
           return this.identifier()
         }
 

@@ -2,9 +2,14 @@
   "name": "js-eval",
   "module": "src/index.ts",
   "type": "module",
+  "scripts": {
+    "format": "prettier --write --ignore-path .gitignore --cache .",
+    "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint"
+  },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
-    "@types/bun": "latest"
+    "@eslint/compat": "^1.2.2",
+    "@types/bun": "latest",
+    "prettier": "^3.3.3"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

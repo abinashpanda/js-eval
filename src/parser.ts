@@ -7,13 +7,13 @@ import type {
   Identifier,
   InfixExpression,
   LetStatement,
-  Number,
+  NumberExpression,
   ParameterStatement,
   PrefixExpression,
   Program,
   ReturnStatement,
   Statement,
-  String,
+  StringExpression,
 } from './ast'
 import type { Lexer } from './lexer'
 import { Prec, TOKEN_PREC_MAP, TokenType, type Token } from './token'
@@ -37,7 +37,10 @@ export class Parser {
     this.registerPrefix(TokenType.STRING, this.parseString.bind(this))
     this.registerPrefix(TokenType.IDENT, this.parseIdent.bind(this))
     this.registerPrefix(TokenType.MINUS, this.parsePrefix.bind(this))
-    this.registerPrefix(TokenType.L_PAREN, this.parseGroupedExpression.bind(this))
+    this.registerPrefix(
+      TokenType.L_PAREN,
+      this.parseGroupedExpression.bind(this),
+    )
 
     this.registerInfix(TokenType.PLUS, this.parseInfix.bind(this))
     this.registerInfix(TokenType.MINUS, this.parseInfix.bind(this))
@@ -49,7 +52,7 @@ export class Parser {
 
   parseProgram(): Program {
     const program: Program = { type: 'program', statements: [] }
-    while (this.peekToken.tokenType != TokenType.EOF) {
+    while (this.peekToken.tokenType !== TokenType.EOF) {
       const statement = this.parseStatement()
       program.statements.push(statement)
       this.nextToken()
@@ -60,8 +63,13 @@ export class Parser {
   private parseStatement(): Statement {
     const statement = match(this.currentToken)
       .returnType<Statement>()
-      .with(P.union({ tokenType: TokenType.LET }, { tokenType: TokenType.CONST }, { tokenType: TokenType.VAR }), () =>
-        this.parseLetExpression(),
+      .with(
+        P.union(
+          { tokenType: TokenType.LET },
+          { tokenType: TokenType.CONST },
+          { tokenType: TokenType.VAR },
+        ),
+        () => this.parseLetExpression(),
       )
       .with({ tokenType: TokenType.RETURN }, () => this.parseReturnStatement())
       .with({ tokenType: TokenType.FUNC }, () => this.parseFunctionStatement())
@@ -74,7 +82,11 @@ export class Parser {
 
   private parseLetExpression(): LetStatement {
     const tokenType = this.currentToken.tokenType
-    if (tokenType !== TokenType.LET && tokenType !== TokenType.CONST && tokenType !== TokenType.VAR) {
+    if (
+      tokenType !== TokenType.LET &&
+      tokenType !== TokenType.CONST &&
+      tokenType !== TokenType.VAR
+    ) {
       throw new Error(`unexpected token. got = ${tokenType}`)
     }
     this.expectPeek(TokenType.IDENT)
@@ -82,12 +94,22 @@ export class Parser {
     this.expectPeek(TokenType.EQ)
     this.nextToken()
     const expression = this.parseExpression(Prec.LOWEST)
-    return { type: 'statement', statementType: 'let', tokenType, identifier, expression }
+    return {
+      type: 'statement',
+      statementType: 'let',
+      tokenType,
+      identifier,
+      expression,
+    }
   }
 
   private parseReturnStatement(): ReturnStatement {
     this.nextToken()
-    return { type: 'statement', statementType: 'return', expression: this.parseExpression(Prec.LOWEST) }
+    return {
+      type: 'statement',
+      statementType: 'return',
+      expression: this.parseExpression(Prec.LOWEST),
+    }
   }
 
   private parseFunctionStatement(): FunctionStatement {
@@ -97,7 +119,13 @@ export class Parser {
     const parameters = this.parseFunctionParams()
     this.expectPeek(TokenType.L_BRACE)
     const body = this.parseBlockStatement()
-    return { type: 'statement', statementType: 'function', functionName, parameters, body }
+    return {
+      type: 'statement',
+      statementType: 'function',
+      functionName,
+      parameters,
+      body,
+    }
   }
 
   private parseFunctionParams(): ParameterStatement[] {
@@ -106,7 +134,10 @@ export class Parser {
 
     let hasEncounteredRestToken = false
 
-    while (this.currentToken.tokenType !== TokenType.EOF && this.currentToken.tokenType !== TokenType.R_PAREN) {
+    while (
+      this.currentToken.tokenType !== TokenType.EOF &&
+      this.currentToken.tokenType !== TokenType.R_PAREN
+    ) {
       if (this.currentToken.tokenType === TokenType.DOT_DOT_DOT) {
         hasEncounteredRestToken = true
         this.nextToken()
@@ -119,12 +150,12 @@ export class Parser {
         }
         identifiers.push(parameter)
         if (this.peekToken.tokenType === TokenType.EQ) {
-          throw new Error(`rest parameter may not have a default initializer`)
+          throw new Error('rest parameter may not have a default initializer')
         }
         this.nextToken()
       } else if (this.currentToken.tokenType === TokenType.IDENT) {
         if (hasEncounteredRestToken) {
-          throw new Error(`rest paramter must be last formal parameter`)
+          throw new Error('rest paramter must be last formal parameter')
         }
         const ident = this.parseIdent()
         const parameter: ParameterStatement = {
@@ -144,7 +175,9 @@ export class Parser {
       } else if (this.currentToken.tokenType === TokenType.COMMA) {
         this.nextToken()
       } else {
-        throw new Error(`unexpected token. got = ${this.currentToken.tokenType}`)
+        throw new Error(
+          `unexpected token. got = ${this.currentToken.tokenType}`,
+        )
       }
     }
 
@@ -153,9 +186,16 @@ export class Parser {
 
   private parseBlockStatement(): BlockStatement {
     this.nextToken()
-    const statement: BlockStatement = { type: 'statement', statementType: 'block', statements: [] }
+    const statement: BlockStatement = {
+      type: 'statement',
+      statementType: 'block',
+      statements: [],
+    }
 
-    while (this.currentToken.tokenType !== TokenType.R_BRACE && this.currentToken.tokenType !== TokenType.EOF) {
+    while (
+      this.currentToken.tokenType !== TokenType.R_BRACE &&
+      this.currentToken.tokenType !== TokenType.EOF
+    ) {
       statement.statements.push(this.parseStatement())
       this.nextToken()
     }
@@ -174,7 +214,9 @@ export class Parser {
   private parseExpression(precedence: number): Expression {
     const prefixFn = this.prefixParseFns[this.currentToken.tokenType]
     if (typeof prefixFn !== 'function') {
-      throw new Error(`prefix function not found for tokenType = ${this.currentToken.tokenType}`)
+      throw new Error(
+        `prefix function not found for tokenType = ${this.currentToken.tokenType}`,
+      )
     }
     let left = prefixFn()
 
@@ -194,7 +236,7 @@ export class Parser {
     return left
   }
 
-  private parseNumber(): Number {
+  private parseNumber(): NumberExpression {
     return {
       type: 'expression',
       expressionType: 'number',
@@ -202,7 +244,7 @@ export class Parser {
     }
   }
 
-  private parseString(): String {
+  private parseString(): StringExpression {
     return {
       type: 'expression',
       expressionType: 'string',
@@ -273,7 +315,9 @@ export class Parser {
 
   private expectPeek(tokenType: TokenType) {
     if (this.peekToken.tokenType !== tokenType) {
-      throw new Error(`unexpected token. expected = ${tokenType}. got = ${this.peekToken.tokenType}`)
+      throw new Error(
+        `unexpected token. expected = ${tokenType}. got = ${this.peekToken.tokenType}`,
+      )
     }
     this.nextToken()
   }

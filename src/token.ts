@@ -83,13 +83,13 @@ export const TOKEN_TYPE_IDENT_MAP: Record<string, TokenType> = {
 }
 
 export enum Prec {
-  LOWEST,
-  LOGICAL,
-  SUM,
-  PRODUCT,
-  PREFIX,
-  CALL,
-  PRIMARY,
+  LOWEST = 0,
+  LOGICAL = 1,
+  SUM = 2,
+  PRODUCT = 3,
+  PREFIX = 4,
+  CALL = 5,
+  PRIMARY = 6,
 }
 
 export const TOKEN_PREC_MAP: Partial<Record<TokenType, number>> = {
